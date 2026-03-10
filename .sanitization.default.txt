@@ -1,0 +1,10 @@
+# One fixed string per line. Blank lines and comments are ignored.
+# Add your own machine/project-specific terms in `.sanitization.local.txt`.
+
+/home/
+/mnt/c/Users/
+C:\Users\
+wsl.localhost
+OpenAI.Codex_
+.codex/auth.json
+Bearer 

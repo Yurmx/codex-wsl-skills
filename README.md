@@ -103,6 +103,35 @@ Before using `codex-wsl-maintenance`:
 
 This repo is an unofficial workaround toolkit for affected setups, not official OpenAI software.
 
+## Release hygiene
+
+This repo includes a sanitization checker:
+
+```bash
+python3 scripts/check_sanitization.py --history main
+```
+
+What it does:
+
+- scans tracked files for unsanitized local paths / machine identifiers
+- scans reachable history for the same patterns
+- fails fast before a public push if the repo still contains private local strings
+
+Repo-local enforcement:
+
+- `.githooks/pre-push` runs the checker automatically
+- set it once locally with:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Machine-specific patterns should go in a local, ignored file:
+
+- `.sanitization.local.txt`
+
+That lets you block your own usernames, private repo names, and local path fragments without pushing those patterns into the public repo.
+
 ## Notes
 
 - These skills are sanitized for public sharing and remove machine-specific paths and private repo identifiers.
