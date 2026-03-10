@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex WSL Maintenance"
+  short_description: "Repair and stabilize Codex Desktop on WSL"
+  default_prompt: "Use $codex-wsl-maintenance to audit and repair Codex Desktop WSL local state."

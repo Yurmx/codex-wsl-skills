@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repo Memory Retrieval"
+  short_description: "Repo-scoped memory lookup without app memories"
+  default_prompt: "Use $repo-memory-retrieval to load the most relevant project memory for the current repo."

@@ -1,0 +1,25 @@
+@echo off
+setlocal
+set "APPID={{CODEX_APPID}}"
+set "DISTRO={{WSL_DISTRO_NAME}}"
+set "LOGFILE=%USERPROFILE%\\codex-wsl-open-clean.log"
+
+echo [%date% %time%] start>>"%LOGFILE%"
+echo Ensuring Codex is fully closed before maintenance...
+
+echo [%date% %time%] stopping Windows Codex processes>>"%LOGFILE%"
+powershell.exe -NoProfile -Command "Get-Process Codex -ErrorAction SilentlyContinue | Stop-Process -Force"
+
+echo [%date% %time%] stopping WSL codex backends>>"%LOGFILE%"
+wsl.exe -d %DISTRO% bash -lc "pkill -x codex >/dev/null 2>&1 || true"
+
+timeout /t 3 /nobreak >nul
+
+echo [%date% %time%] running maintenance>>"%LOGFILE%"
+wsl.exe -d %DISTRO% bash -lc "python3 \"$CODEX_HOME/skills/codex-wsl-maintenance/scripts/codex_wsl_maintain.py\" --mode force"
+set "RC=%ERRORLEVEL%"
+echo [%date% %time%] maintenance rc=%RC%>>"%LOGFILE%"
+if not "%RC%"=="0" exit /b %RC%
+
+echo [%date% %time%] issuing AppID launch>>"%LOGFILE%"
+powershell.exe -NoProfile -Command "Start-Process explorer.exe 'shell:AppsFolder\%APPID%'"
