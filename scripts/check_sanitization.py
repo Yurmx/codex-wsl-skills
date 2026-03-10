@@ -5,6 +5,7 @@ import argparse
 import subprocess
 import sys
 from pathlib import Path
+import shutil
 
 
 def run(*args: str, cwd: Path | None = None, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -42,6 +43,18 @@ def tracked_files(root: Path) -> list[str]:
     return [line for line in result.stdout.splitlines() if line]
 
 
+def file_contains_pattern(path: Path, pattern: str) -> list[str]:
+    matches: list[str] = []
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return matches
+    for idx, line in enumerate(text.splitlines(), start=1):
+        if pattern in line:
+            matches.append(f"{path.as_posix()}:{idx}:{line.strip()}")
+    return matches
+
+
 def scan_worktree(root: Path, patterns: list[str]) -> list[str]:
     if not patterns:
         return []
@@ -49,16 +62,25 @@ def scan_worktree(root: Path, patterns: list[str]) -> list[str]:
     if not files:
         return []
     matches: list[str] = []
+    rg_path = shutil.which("rg")
+    if rg_path:
+        for pattern in patterns:
+            result = subprocess.run(
+                [rg_path, "-n", "-F", pattern, *files],
+                cwd=str(root),
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            if result.returncode == 0 and result.stdout:
+                for line in result.stdout.splitlines():
+                    matches.append(f"worktree:{line}")
+        return matches
+
     for pattern in patterns:
-        result = subprocess.run(
-            ["rg", "-n", "-F", pattern, *files],
-            cwd=str(root),
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        if result.returncode == 0 and result.stdout:
-            for line in result.stdout.splitlines():
+        for rel in files:
+            path = root / rel
+            for line in file_contains_pattern(path, pattern):
                 matches.append(f"worktree:{line}")
     return matches
 
@@ -74,10 +96,11 @@ def scan_history(root: Path, patterns: list[str], history_ref: str | None) -> li
         return []
     matches: list[str] = []
     revs = revs_for_history(root, history_ref)
+    git_path = shutil.which("git") or "git"
     for pattern in patterns:
         for rev in revs:
             result = subprocess.run(
-                ["git", "grep", "-n", "-F", pattern, rev],
+                [git_path, "grep", "-n", "-F", pattern, rev],
                 cwd=str(root),
                 text=True,
                 capture_output=True,
